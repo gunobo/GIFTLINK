@@ -11,6 +11,7 @@ import { SendDashboard } from "@/pages/SendDashboard";
 import { RedemptionDashboard } from "@/pages/RedemptionDashboard";
 import { QRScan } from "@/pages/QRScan";
 import { PublicRedeem } from "@/pages/PublicRedeem";
+import { Settings } from "@/pages/Settings";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="send" element={<SendDashboard />} />
               <Route path="redemption" element={<RedemptionDashboard />} />
             </Route>
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
 

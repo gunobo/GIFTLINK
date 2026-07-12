@@ -18,5 +18,7 @@ class BaseSender(ABC):
     """
 
     @abstractmethod
-    async def send(self, winner: Winner, message: str) -> SendResult:
+    async def send(self, winner: Winner, message: str, kakao_template_id: str | None = None) -> SendResult:
+        """kakao_template_id는 KakaoSender만 사용한다 (Solapi 알림톡은 사전 승인된
+        템플릿 ID + 변수로만 발송 가능해 자유 텍스트를 못 보낸다). 다른 채널은 무시한다."""
         ...

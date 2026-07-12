@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     solapi_api_key: str = ""
     solapi_api_secret: str = ""
     solapi_sender_phone: str = ""
+    solapi_kakao_pf_id: str = ""
 
     smtp_host: str = ""
     smtp_port: int = 587

@@ -7,7 +7,7 @@ from app.senders.base import BaseSender, SendResult
 class WebhookSender(BaseSender):
     """Discord/Slack 웹훅 POST 발송."""
 
-    async def send(self, winner: Winner, message: str) -> SendResult:
+    async def send(self, winner: Winner, message: str, kakao_template_id: str | None = None) -> SendResult:
         webhook_url = winner.slack_webhook
         if not webhook_url:
             return SendResult(success=False, error_msg="웹훅 URL이 없어 발송할 수 없습니다.")

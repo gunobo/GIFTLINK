@@ -27,6 +27,7 @@ export interface MessageTemplate {
   channel: string;
   name: string;
   body: string;
+  kakao_template_id: string | null;
   created_at: string;
 }
 

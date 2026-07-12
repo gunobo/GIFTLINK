@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 const NAV_ITEMS = [
   { to: "/events", label: "이벤트", icon: "🎉" },
   { to: "/scan", label: "QR 스캔", icon: "📷" },
+  { to: "/settings", label: "설정", icon: "⚙️" },
 ];
 
 export function Layout() {

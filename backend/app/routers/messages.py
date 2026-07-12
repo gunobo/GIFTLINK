@@ -23,7 +23,7 @@ def render_template(body: str, winner: Winner) -> str:
     )
 
 
-async def _send_one(winner_id: int, channel: str, template_body: str) -> None:
+async def _send_one(winner_id: int, channel: str, template_body: str, kakao_template_id: str | None) -> None:
     """BackgroundTasks에서 실행되는 개별 발송 작업. 결과는 message_log에 기록한다.
 
     분당 수백 건 이상으로 커지기 전까지는 Celery/Redis 없이 이 정도로 충분하다.
@@ -35,7 +35,7 @@ async def _send_one(winner_id: int, channel: str, template_body: str) -> None:
             return
         sender = get_sender(channel)
         message = render_template(template_body, winner)
-        result = await sender.send(winner, message)
+        result = await sender.send(winner, message, kakao_template_id)
         db.add(
             MessageLog(
                 winner_id=winner_id,
@@ -78,7 +78,7 @@ def send_messages(
         raise HTTPException(status_code=404, detail="템플릿을 찾을 수 없습니다.")
 
     for winner_id in payload.winner_ids:
-        background_tasks.add_task(_send_one, winner_id, channel, template.body)
+        background_tasks.add_task(_send_one, winner_id, channel, template.body, template.kakao_template_id)
 
     return {"queued": len(payload.winner_ids)}
 

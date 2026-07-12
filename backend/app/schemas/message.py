@@ -10,6 +10,7 @@ class TemplateCreate(BaseModel):
     channel: str
     name: str
     body: str
+    kakao_template_id: str | None = None
 
 
 class TemplateOut(BaseModel):
@@ -20,6 +21,7 @@ class TemplateOut(BaseModel):
     channel: str
     name: str
     body: str
+    kakao_template_id: str | None
     created_at: datetime
 
 

@@ -21,6 +21,7 @@ export function MessageTemplate() {
   const [channel, setChannel] = useState<Channel>("email");
   const [name, setName] = useState("");
   const [body, setBody] = useState("{이름}님, 축하드립니다! {경품명}에 당첨되셨어요.\n교환 링크: {redeem_link}");
+  const [kakaoTemplateId, setKakaoTemplateId] = useState("");
 
   async function load() {
     setTemplates(await api.get<MessageTemplateType[]>(`/messages/template?event_id=${eventId}`));
@@ -33,8 +34,15 @@ export function MessageTemplate() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!name.trim() || !body.trim()) return;
-    await api.post("/messages/template", { event_id: eventId, channel, name, body });
+    await api.post("/messages/template", {
+      event_id: eventId,
+      channel,
+      name,
+      body,
+      kakao_template_id: channel === "kakao" ? kakaoTemplateId || null : null,
+    });
     setName("");
+    setKakaoTemplateId("");
     await load();
   }
 
@@ -66,6 +74,24 @@ export function MessageTemplate() {
             </label>
             <input id="tpl-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
+          {channel === "kakao" && (
+            <div>
+              <label className="label" htmlFor="tpl-kakao-id">
+                카카오 알림톡 템플릿 ID
+              </label>
+              <input
+                id="tpl-kakao-id"
+                className="input"
+                placeholder="Solapi 콘솔에서 사전 승인받은 템플릿 ID"
+                value={kakaoTemplateId}
+                onChange={(e) => setKakaoTemplateId(e.target.value)}
+              />
+              <p className="mt-1.5 text-xs text-slate-400">
+                알림톡은 자유 텍스트 발송이 불가능해 아래 본문은 미리보기 용도로만 쓰이고, 실제 발송은 이 템플릿
+                ID에 이름/경품명/교환링크 변수를 채워서 나갑니다.
+              </p>
+            </div>
+          )}
           <div>
             <label className="label" htmlFor="tpl-body">
               본문
@@ -113,6 +139,11 @@ export function MessageTemplate() {
                 <span className="badge bg-slate-100 text-slate-500">{t.channel}</span>
               </div>
               <p className="whitespace-pre-wrap text-sm text-slate-500">{t.body}</p>
+              {t.channel === "kakao" && (
+                <p className="mt-2 text-xs text-slate-400">
+                  템플릿 ID: {t.kakao_template_id ?? <span className="text-rose-500">미설정</span>}
+                </p>
+              )}
             </Card>
           ))
         )}

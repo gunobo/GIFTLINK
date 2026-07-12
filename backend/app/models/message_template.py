@@ -14,4 +14,5 @@ class MessageTemplate(Base):
     channel: Mapped[str] = mapped_column(String(20), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    kakao_template_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped["DateTime"] = mapped_column(DateTime, server_default=func.now())
