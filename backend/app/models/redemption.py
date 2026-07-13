@@ -20,6 +20,7 @@ class Redemption(Base):
     code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     prize_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    gift_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status: Mapped[RedemptionStatus] = mapped_column(Enum(RedemptionStatus), default=RedemptionStatus.issued)
     issued_at: Mapped["DateTime"] = mapped_column(DateTime, nullable=True)
     redeemed_at: Mapped["DateTime"] = mapped_column(DateTime, nullable=True)

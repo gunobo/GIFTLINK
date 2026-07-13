@@ -20,8 +20,11 @@ export function RedemptionDashboard() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [winnerId, setWinnerId] = useState<number | "">("");
   const [prizeName, setPrizeName] = useState("");
+  const [giftUrl, setGiftUrl] = useState("");
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [editingCode, setEditingCode] = useState<string | null>(null);
+  const [editingUrl, setEditingUrl] = useState("");
 
   async function load() {
     const [r, w] = await Promise.all([
@@ -42,9 +45,25 @@ export function RedemptionDashboard() {
   async function handleIssue(e: FormEvent) {
     e.preventDefault();
     if (!winnerId || !prizeName.trim()) return;
-    await api.post("/redemption/issue", { winner_id: winnerId, prize_name: prizeName });
+    await api.post("/redemption/issue", {
+      winner_id: winnerId,
+      prize_name: prizeName,
+      gift_url: giftUrl.trim() || null,
+    });
     setWinnerId("");
     setPrizeName("");
+    setGiftUrl("");
+    await load();
+  }
+
+  function startEditGiftUrl(r: Redemption) {
+    setEditingCode(r.code);
+    setEditingUrl(r.gift_url ?? "");
+  }
+
+  async function saveGiftUrl(code: string) {
+    await api.patch(`/redemption/${code}/gift-url`, { gift_url: editingUrl.trim() || null });
+    setEditingCode(null);
     await load();
   }
 
@@ -84,6 +103,12 @@ export function RedemptionDashboard() {
               ))}
             </select>
             <input className="input" placeholder="경품명" value={prizeName} onChange={(e) => setPrizeName(e.target.value)} />
+            <input
+              className="input"
+              placeholder="선물 링크 (선택 · 카카오톡 선물하기 등)"
+              value={giftUrl}
+              onChange={(e) => setGiftUrl(e.target.value)}
+            />
             <Button type="submit" className="w-full">
               코드+링크 발급
             </Button>
@@ -118,6 +143,7 @@ export function RedemptionDashboard() {
               <tr>
                 <th className="px-4 py-3 font-medium">코드</th>
                 <th className="px-4 py-3 font-medium">경품명</th>
+                <th className="px-4 py-3 font-medium">선물 링크</th>
                 <th className="px-4 py-3 font-medium">상태</th>
                 <th className="px-4 py-3 font-medium">처리자</th>
               </tr>
@@ -127,6 +153,59 @@ export function RedemptionDashboard() {
                 <tr key={r.id}>
                   <td className="px-4 py-3 font-mono text-slate-700">{r.code}</td>
                   <td className="px-4 py-3 text-slate-600">{r.prize_name}</td>
+                  <td className="px-4 py-3">
+                    {editingCode === r.code ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          className="input h-8 py-1 text-xs"
+                          placeholder="https://gift.kakao.com/..."
+                          value={editingUrl}
+                          onChange={(e) => setEditingUrl(e.target.value)}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveGiftUrl(r.code)}
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          저장
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCode(null)}
+                          className="text-xs text-slate-400 hover:text-slate-600"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : r.gift_url ? (
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={r.gift_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="max-w-[160px] truncate text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          {r.gift_url}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => startEditGiftUrl(r)}
+                          className="text-xs text-slate-400 hover:text-slate-600"
+                        >
+                          수정
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEditGiftUrl(r)}
+                        className="text-xs text-slate-400 underline hover:text-slate-600"
+                      >
+                        링크 추가
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant={STATUS_LABEL[r.status].variant}>{STATUS_LABEL[r.status].label}</Badge>
                   </td>

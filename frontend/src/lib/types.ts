@@ -52,6 +52,7 @@ export interface Redemption {
   code: string;
   token: string;
   prize_name: string;
+  gift_url: string | null;
   status: RedemptionStatus;
   issued_at: string | null;
   redeemed_at: string | null;

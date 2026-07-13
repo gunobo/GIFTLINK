@@ -16,6 +16,7 @@ export function WinnerUpload() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [drawCount, setDrawCount] = useState("");
   const [prizeName, setPrizeName] = useState("");
+  const [giftUrl, setGiftUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -24,7 +25,13 @@ export function WinnerUpload() {
     if (!prizeName.trim() || winnerIds.length === 0) return;
     // 이미 코드가 발급된 당첨자(재선택 등)는 개별적으로 실패해도 나머지에는 영향 없게 처리
     await Promise.allSettled(
-      winnerIds.map((winner_id) => api.post("/redemption/issue", { winner_id, prize_name: prizeName.trim() }))
+      winnerIds.map((winner_id) =>
+        api.post("/redemption/issue", {
+          winner_id,
+          prize_name: prizeName.trim(),
+          gift_url: giftUrl.trim() || null,
+        })
+      )
     );
   }
 
@@ -172,18 +179,36 @@ export function WinnerUpload() {
           </p>
         </div>
 
-        <div className="mb-4">
-          <label className="label" htmlFor="prize-name">
-            경품명 <span className="font-normal text-slate-400">(입력하면 당첨자 지정과 동시에 교환 코드가 자동 발급돼요)</span>
-          </label>
-          <input
-            id="prize-name"
-            className="input"
-            placeholder="예: 무선 이어폰"
-            value={prizeName}
-            onChange={(e) => setPrizeName(e.target.value)}
-          />
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label" htmlFor="prize-name">
+              경품명 <span className="font-normal text-slate-400">(입력하면 당첨자 지정과 동시에 코드 자동 발급)</span>
+            </label>
+            <input
+              id="prize-name"
+              className="input"
+              placeholder="예: 무선 이어폰"
+              value={prizeName}
+              onChange={(e) => setPrizeName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="gift-url">
+              선물 링크 <span className="font-normal text-slate-400">(선택 · 카카오톡 선물하기 등)</span>
+            </label>
+            <input
+              id="gift-url"
+              className="input"
+              placeholder="https://gift.kakao.com/..."
+              value={giftUrl}
+              onChange={(e) => setGiftUrl(e.target.value)}
+            />
+          </div>
         </div>
+        <p className="mb-4 -mt-2 text-xs text-slate-400">
+          여러 명이 같은 선물을 받는 경우에만 여기서 링크까지 한 번에 넣으세요. 당첨자마다 다른 선물이면
+          "경품 교환" 탭에서 개별적으로 발급/수정할 수 있어요.
+        </p>
 
         <div className="flex flex-wrap items-center gap-2">
           <form onSubmit={handleRandomDraw} className="flex items-center gap-2">

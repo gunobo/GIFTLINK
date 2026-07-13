@@ -5,16 +5,17 @@ import { api } from "@/api/client";
 interface RedeemPage {
   code: string;
   prize_name: string;
+  gift_url: string | null;
   status: "issued" | "redeemed" | "expired";
   qr_data_url: string;
   expires_at: string | null;
 }
 
-const STATUS_COPY: Record<RedeemPage["status"], { title: string; tone: string }> = {
-  issued: { title: "아래 코드를 현장에서 제시해주세요", tone: "text-brand-700" },
-  redeemed: { title: "이미 교환이 완료된 경품이에요", tone: "text-emerald-600" },
-  expired: { title: "교환 기한이 지났어요", tone: "text-slate-400" },
-};
+function statusTitle(status: RedeemPage["status"], hasGiftUrl: boolean) {
+  if (status === "redeemed") return "이미 교환이 완료된 경품이에요";
+  if (status === "expired") return "교환 기한이 지났어요";
+  return hasGiftUrl ? "아래 버튼을 눌러 선물을 받아보세요" : "아래 코드를 현장에서 제시해주세요";
+}
 
 export function PublicRedeem() {
   const { token } = useParams();
@@ -66,13 +67,24 @@ export function PublicRedeem() {
         <div className="ticket relative overflow-hidden rounded-2xl bg-white shadow-card-hover">
           <div className="bg-brand-gradient px-6 py-5 text-center text-white">
             <p className={`text-sm font-medium ${isRedeemed ? "text-white/90" : "text-white"}`}>
-              {STATUS_COPY[data.status].title}
+              {statusTitle(data.status, !!data.gift_url)}
             </p>
           </div>
 
           <div className="ticket-notch" />
 
           <div className={`flex flex-col items-center gap-5 px-6 py-8 ${isRedeemed ? "opacity-50" : ""}`}>
+            {data.gift_url && !isRedeemed && (
+              <a
+                href={data.gift_url}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary w-full text-center"
+              >
+                🎁 선물 받기
+              </a>
+            )}
+
             <img src={data.qr_data_url} alt="교환 QR 코드" className="h-40 w-40 rounded-xl ring-1 ring-slate-100" />
 
             <button
@@ -90,7 +102,11 @@ export function PublicRedeem() {
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          {isRedeemed ? "이미 처리된 교환 코드입니다." : "현장 관리자에게 QR 또는 코드를 보여주세요."}
+          {isRedeemed
+            ? "이미 처리된 교환 코드입니다."
+            : data.gift_url
+              ? "선물 받기 버튼이 안 열리면 위 QR 또는 코드를 관리자에게 보여주세요."
+              : "현장 관리자에게 QR 또는 코드를 보여주세요."}
         </p>
       </div>
 
