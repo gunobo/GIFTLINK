@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Winner } from "@/lib/types";
+import { Redemption, Winner } from "@/lib/types";
 
 export function WinnerUpload() {
   const { eventId } = useOutletContext<{ eventId: number }>();
   const [participants, setParticipants] = useState<Winner[] | null>(null);
+  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -19,6 +20,8 @@ export function WinnerUpload() {
   const [giftUrl, setGiftUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [rowPrize, setRowPrize] = useState<Record<number, string>>({});
+  const [issuingId, setIssuingId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function issuePrizes(winnerIds: number[]) {
@@ -36,7 +39,12 @@ export function WinnerUpload() {
   }
 
   async function load() {
-    setParticipants(await api.get<Winner[]>(`/winners?event_id=${eventId}`));
+    const [w, r] = await Promise.all([
+      api.get<Winner[]>(`/winners?event_id=${eventId}`),
+      api.get<Redemption[]>(`/redemption?event_id=${eventId}`),
+    ]);
+    setParticipants(w);
+    setRedemptions(r);
   }
 
   useEffect(() => {
@@ -127,8 +135,26 @@ export function WinnerUpload() {
     }
   }
 
+  async function handleRowIssue(winnerId: number) {
+    const value = (rowPrize[winnerId] ?? "").trim();
+    if (!value) return;
+    setIssuingId(winnerId);
+    try {
+      await api.post("/redemption/issue", { winner_id: winnerId, prize_name: value });
+      setRowPrize((prev) => {
+        const next = { ...prev };
+        delete next[winnerId];
+        return next;
+      });
+      await load();
+    } finally {
+      setIssuingId(null);
+    }
+  }
+
   const winnerCount = participants?.filter((p) => p.is_winner).length ?? 0;
   const nonWinners = participants?.filter((p) => !p.is_winner) ?? [];
+  const redemptionByWinner = new Map(redemptions.map((r) => [r.winner_id, r]));
 
   return (
     <div className="space-y-6">
@@ -259,25 +285,53 @@ export function WinnerUpload() {
                 <th className="px-4 py-3 font-medium">이메일</th>
                 <th className="px-4 py-3 font-medium">입력 경로</th>
                 <th className="px-4 py-3 font-medium">상태</th>
+                <th className="px-4 py-3 font-medium">경품</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {participants.map((p) => (
-                <tr key={p.id} className={p.is_winner ? "bg-brand-50/40" : undefined}>
-                  <td className="px-4 py-3">
-                    {!p.is_winner && (
-                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} />
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-slate-800">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-500">{p.phone ?? "-"}</td>
-                  <td className="px-4 py-3 text-slate-500">{p.email ?? "-"}</td>
-                  <td className="px-4 py-3 text-slate-400">{p.source === "csv" ? "CSV" : "직접입력"}</td>
-                  <td className="px-4 py-3">
-                    {p.is_winner ? <Badge variant="success">🎉 당첨</Badge> : <Badge variant="neutral">참여자</Badge>}
-                  </td>
-                </tr>
-              ))}
+              {participants.map((p) => {
+                const redemption = redemptionByWinner.get(p.id);
+                return (
+                  <tr key={p.id} className={p.is_winner ? "bg-brand-50/40" : undefined}>
+                    <td className="px-4 py-3">
+                      {!p.is_winner && (
+                        <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} />
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-800">{p.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{p.phone ?? "-"}</td>
+                    <td className="px-4 py-3 text-slate-500">{p.email ?? "-"}</td>
+                    <td className="px-4 py-3 text-slate-400">{p.source === "csv" ? "CSV" : "직접입력"}</td>
+                    <td className="px-4 py-3">
+                      {p.is_winner ? <Badge variant="success">🎉 당첨</Badge> : <Badge variant="neutral">참여자</Badge>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {!p.is_winner ? (
+                        <span className="text-slate-300">-</span>
+                      ) : redemption ? (
+                        <span className="text-slate-600">{redemption.prize_name}</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            className="input h-8 w-32 py-1 text-xs"
+                            placeholder="경품명"
+                            value={rowPrize[p.id] ?? ""}
+                            onChange={(e) => setRowPrize((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRowIssue(p.id)}
+                            disabled={issuingId === p.id || !(rowPrize[p.id] ?? "").trim()}
+                            className="text-xs font-medium text-brand-600 hover:text-brand-700 disabled:text-slate-300"
+                          >
+                            {issuingId === p.id ? "발급 중..." : "발급"}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>

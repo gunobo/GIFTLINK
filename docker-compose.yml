@@ -2,6 +2,9 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    # 이 프로젝트 규모(당첨자 수십~수백 명)엔 기본값이 과해서 라즈베리파이 메모리 절약을 위해 축소
+    command: --innodb-buffer-pool-size=64M --performance-schema=OFF --table-open-cache=64
+    mem_limit: 256m
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -18,6 +21,7 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    mem_limit: 256m
     env_file:
       - ./backend/.env
     environment:
@@ -33,6 +37,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: unless-stopped
+    mem_limit: 64m
     depends_on:
       - backend
     ports:
