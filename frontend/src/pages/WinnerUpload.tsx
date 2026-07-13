@@ -15,9 +15,18 @@ export function WinnerUpload() {
   const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [drawCount, setDrawCount] = useState("");
+  const [prizeName, setPrizeName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function issuePrizes(winnerIds: number[]) {
+    if (!prizeName.trim() || winnerIds.length === 0) return;
+    // 이미 코드가 발급된 당첨자(재선택 등)는 개별적으로 실패해도 나머지에는 영향 없게 처리
+    await Promise.allSettled(
+      winnerIds.map((winner_id) => api.post("/redemption/issue", { winner_id, prize_name: prizeName.trim() }))
+    );
+  }
 
   async function load() {
     setParticipants(await api.get<Winner[]>(`/winners?event_id=${eventId}`));
@@ -73,8 +82,15 @@ export function WinnerUpload() {
     setBusy(true);
     setMessage(null);
     try {
-      await api.post("/winners/select-winners", { winner_ids: Array.from(selected) });
-      setMessage({ type: "success", text: `${selected.size}명을 당첨자로 지정했어요.` });
+      const winnerIds = Array.from(selected);
+      await api.post("/winners/select-winners", { winner_ids: winnerIds });
+      await issuePrizes(winnerIds);
+      setMessage({
+        type: "success",
+        text: prizeName.trim()
+          ? `${selected.size}명을 당첨자로 지정하고 "${prizeName.trim()}" 교환 코드를 발급했어요.`
+          : `${selected.size}명을 당첨자로 지정했어요.`,
+      });
       setSelected(new Set());
       await load();
     } finally {
@@ -90,7 +106,11 @@ export function WinnerUpload() {
     setMessage(null);
     try {
       const drawn = await api.post<Winner[]>("/winners/random-draw", { event_id: eventId, count });
-      setMessage({ type: "success", text: `${drawn.map((w) => w.name).join(", ")} — ${drawn.length}명 추첨 완료` });
+      await issuePrizes(drawn.map((w) => w.id));
+      setMessage({
+        type: "success",
+        text: `${drawn.map((w) => w.name).join(", ")} — ${drawn.length}명 추첨${prizeName.trim() ? ` + "${prizeName.trim()}" 코드 발급` : ""} 완료`,
+      });
       setDrawCount("");
       await load();
     } catch (err) {
@@ -144,33 +164,46 @@ export function WinnerUpload() {
       </Card>
 
       <Card className="bg-brand-gradient-soft">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-medium text-slate-900">당첨자 선택</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              전체 {participants?.length ?? 0}명 중 <span className="font-medium text-brand-700">{winnerCount}명</span> 당첨
-              지정됨
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <form onSubmit={handleRandomDraw} className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                className="input w-24"
-                placeholder="인원"
-                value={drawCount}
-                onChange={(e) => setDrawCount(e.target.value)}
-              />
-              <Button type="submit" variant="secondary" disabled={busy || !drawCount}>
-                🎲 무작위 추첨
-              </Button>
-            </form>
-            <Button onClick={handleSelectWinners} disabled={busy || selected.size === 0}>
-              선택 {selected.size}명 당첨자로 지정
-            </Button>
-          </div>
+        <div className="mb-4">
+          <h2 className="font-medium text-slate-900">당첨자 선택</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            전체 {participants?.length ?? 0}명 중 <span className="font-medium text-brand-700">{winnerCount}명</span> 당첨
+            지정됨
+          </p>
         </div>
+
+        <div className="mb-4">
+          <label className="label" htmlFor="prize-name">
+            경품명 <span className="font-normal text-slate-400">(입력하면 당첨자 지정과 동시에 교환 코드가 자동 발급돼요)</span>
+          </label>
+          <input
+            id="prize-name"
+            className="input"
+            placeholder="예: 무선 이어폰"
+            value={prizeName}
+            onChange={(e) => setPrizeName(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <form onSubmit={handleRandomDraw} className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              className="input w-24"
+              placeholder="인원"
+              value={drawCount}
+              onChange={(e) => setDrawCount(e.target.value)}
+            />
+            <Button type="submit" variant="secondary" disabled={busy || !drawCount}>
+              🎲 무작위 추첨
+            </Button>
+          </form>
+          <Button onClick={handleSelectWinners} disabled={busy || selected.size === 0}>
+            선택 {selected.size}명 당첨자로 지정
+          </Button>
+        </div>
+
         {message && (
           <p className={`mt-3 text-sm ${message.type === "success" ? "text-emerald-600" : "text-rose-600"}`}>
             {message.text}

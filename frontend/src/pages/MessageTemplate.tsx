@@ -114,6 +114,10 @@ export function MessageTemplate() {
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-xs text-slate-400">
+              여기 직접 값을 입력하는 게 아니라, 발송 시점에 당첨자마다 자동으로 채워집니다. {"{경품명}"}과{" "}
+              {"{redeem_link}"}는 "참여자" 탭에서 당첨자를 지정할 때 경품명을 입력해야 채워져요.
+            </p>
           </div>
           <Button type="submit">템플릿 저장</Button>
         </form>
