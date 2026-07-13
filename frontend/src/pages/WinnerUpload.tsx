@@ -21,6 +21,7 @@ export function WinnerUpload() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [rowPrize, setRowPrize] = useState<Record<number, string>>({});
+  const [rowGiftUrl, setRowGiftUrl] = useState<Record<number, string>>({});
   const [issuingId, setIssuingId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -140,8 +141,17 @@ export function WinnerUpload() {
     if (!value) return;
     setIssuingId(winnerId);
     try {
-      await api.post("/redemption/issue", { winner_id: winnerId, prize_name: value });
+      await api.post("/redemption/issue", {
+        winner_id: winnerId,
+        prize_name: value,
+        gift_url: (rowGiftUrl[winnerId] ?? "").trim() || null,
+      });
       setRowPrize((prev) => {
+        const next = { ...prev };
+        delete next[winnerId];
+        return next;
+      });
+      setRowGiftUrl((prev) => {
         const next = { ...prev };
         delete next[winnerId];
         return next;
@@ -286,6 +296,7 @@ export function WinnerUpload() {
                 <th className="px-4 py-3 font-medium">입력 경로</th>
                 <th className="px-4 py-3 font-medium">상태</th>
                 <th className="px-4 py-3 font-medium">경품</th>
+                <th className="px-4 py-3 font-medium">선물 링크</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -311,18 +322,45 @@ export function WinnerUpload() {
                       ) : redemption ? (
                         <span className="text-slate-600">{redemption.prize_name}</span>
                       ) : (
+                        <input
+                          className="input h-8 w-28 py-1 text-xs"
+                          placeholder="경품명"
+                          value={rowPrize[p.id] ?? ""}
+                          onChange={(e) => setRowPrize((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        />
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {!p.is_winner ? (
+                        <span className="text-slate-300">-</span>
+                      ) : redemption ? (
+                        redemption.gift_url ? (
+                          <a
+                            href={redemption.gift_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="max-w-[140px] truncate text-xs font-medium text-brand-600 hover:text-brand-700"
+                          >
+                            {redemption.gift_url}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            "경품 교환" 탭에서 추가
+                          </span>
+                        )
+                      ) : (
                         <div className="flex items-center gap-1.5">
                           <input
                             className="input h-8 w-32 py-1 text-xs"
-                            placeholder="경품명"
-                            value={rowPrize[p.id] ?? ""}
-                            onChange={(e) => setRowPrize((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                            placeholder="https://gift.kakao.com/..."
+                            value={rowGiftUrl[p.id] ?? ""}
+                            onChange={(e) => setRowGiftUrl((prev) => ({ ...prev, [p.id]: e.target.value }))}
                           />
                           <button
                             type="button"
                             onClick={() => handleRowIssue(p.id)}
                             disabled={issuingId === p.id || !(rowPrize[p.id] ?? "").trim()}
-                            className="text-xs font-medium text-brand-600 hover:text-brand-700 disabled:text-slate-300"
+                            className="whitespace-nowrap text-xs font-medium text-brand-600 hover:text-brand-700 disabled:text-slate-300"
                           >
                             {issuingId === p.id ? "발급 중..." : "발급"}
                           </button>
