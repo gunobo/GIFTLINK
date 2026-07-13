@@ -33,7 +33,18 @@ class WinnerOut(BaseModel):
     discord_id: str | None
     slack_webhook: str | None
     source: WinnerSource
+    is_winner: bool
+    selected_at: datetime | None
     created_at: datetime
+
+
+class SelectWinnersRequest(BaseModel):
+    winner_ids: list[int]
+
+
+class RandomDrawRequest(BaseModel):
+    event_id: int
+    count: int
 
 
 class CsvColumnMapping(BaseModel):

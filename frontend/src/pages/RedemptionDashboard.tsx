@@ -26,7 +26,7 @@ export function RedemptionDashboard() {
   async function load() {
     const [r, w] = await Promise.all([
       api.get<Redemption[]>(`/redemption?event_id=${eventId}`),
-      api.get<Winner[]>(`/winners?event_id=${eventId}`),
+      api.get<Winner[]>(`/winners?event_id=${eventId}&is_winner=true`),
     ]);
     setRedemptions(r);
     setWinners(w);

@@ -12,11 +12,13 @@ import { RedemptionDashboard } from "@/pages/RedemptionDashboard";
 import { QRScan } from "@/pages/QRScan";
 import { PublicRedeem } from "@/pages/PublicRedeem";
 import { Settings } from "@/pages/Settings";
+import { Landing } from "@/pages/Landing";
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/redeem/:token" element={<PublicRedeem />} />
 
@@ -36,7 +38,7 @@ export default function App() {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/events" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );

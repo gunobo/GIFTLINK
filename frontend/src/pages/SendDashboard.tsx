@@ -19,7 +19,7 @@ export function SendDashboard() {
 
   async function load() {
     const [w, t, l] = await Promise.all([
-      api.get<Winner[]>(`/winners?event_id=${eventId}`),
+      api.get<Winner[]>(`/winners?event_id=${eventId}&is_winner=true`),
       api.get<MessageTemplate[]>(`/messages/template?event_id=${eventId}`),
       api.get<MessageLog[]>(`/messages/logs?event_id=${eventId}`),
     ]);
@@ -80,7 +80,7 @@ export function SendDashboard() {
         </div>
 
         {winners.length === 0 ? (
-          <EmptyState icon="👥" title="발송할 당첨자가 없어요" />
+          <EmptyState icon="👥" title="당첨자로 지정된 사람이 없어요" description="'참여자' 탭에서 먼저 당첨자를 선택해주세요." />
         ) : (
           <div className="max-h-72 space-y-1 overflow-y-auto">
             {winners.map((w) => (

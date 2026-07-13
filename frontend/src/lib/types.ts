@@ -16,6 +16,8 @@ export interface Winner {
   discord_id: string | null;
   slack_webhook: string | null;
   source: "csv" | "manual";
+  is_winner: boolean;
+  selected_at: string | null;
   created_at: string;
 }
 
@@ -55,4 +57,16 @@ export interface Redemption {
   redeemed_at: string | null;
   redeemed_by: string | null;
   expires_at: string | null;
+}
+
+export interface PublicEvent {
+  id: number;
+  name: string;
+}
+
+export interface LookupResult {
+  event_name: string;
+  prize_name: string | null;
+  status: "pending" | RedemptionStatus;
+  token: string | null;
 }

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EventItem, EventStatus } from "@/lib/types";
 
 const TABS = [
-  { to: "winners", label: "당첨자", icon: "👥" },
+  { to: "winners", label: "참여자", icon: "👥" },
   { to: "templates", label: "메시지 템플릿", icon: "✏️" },
   { to: "send", label: "발송 결과", icon: "📤" },
   { to: "redemption", label: "경품 교환", icon: "🎟️" },

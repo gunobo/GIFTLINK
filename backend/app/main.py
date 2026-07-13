@@ -8,7 +8,7 @@ from app.config import settings
 from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine
 from app.models.admin import Admin
-from app.routers import auth, events, messages, redemption, winners
+from app.routers import auth, events, messages, public, redemption, winners
 
 logger = logging.getLogger("giftlink")
 
@@ -62,6 +62,7 @@ app.include_router(events.router)
 app.include_router(winners.router)
 app.include_router(messages.router)
 app.include_router(redemption.router)
+app.include_router(public.router)
 
 
 @app.get("/health")
