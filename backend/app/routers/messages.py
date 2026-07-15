@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.security import get_current_admin
 from app.database import SessionLocal, get_db
 from app.models.message_log import Channel, MessageLog, MessageStatus
@@ -15,7 +16,7 @@ router = APIRouter(tags=["messages"], dependencies=[Depends(get_current_admin)])
 def render_template(body: str, winner: Winner) -> str:
     redeem_link = ""
     if winner.redemption:
-        redeem_link = f"/redeem/{winner.redemption.token}"
+        redeem_link = f"{settings.public_base_url}/redeem/{winner.redemption.token}"
     return (
         body.replace("{이름}", winner.name)
         .replace("{경품명}", winner.redemption.prize_name if winner.redemption else "")
