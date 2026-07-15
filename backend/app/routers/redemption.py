@@ -15,7 +15,7 @@ from app.database import get_db
 from app.models.redemption import Redemption, RedemptionStatus
 from app.models.winner import Winner
 from app.schemas.redemption import (
-    GiftUrlUpdateRequest,
+    GiftInfoUpdateRequest,
     RedeemConfirmRequest,
     RedeemPageOut,
     RedeemUseRequest,
@@ -61,6 +61,7 @@ def issue_redemption(payload: RedemptionIssueRequest, db: Session = Depends(get_
         token=_generate_token(),
         prize_name=payload.prize_name,
         gift_url=payload.gift_url,
+        gift_code=payload.gift_code,
         status=RedemptionStatus.issued,
         issued_at=datetime.utcnow(),
         expires_at=payload.expires_at,
@@ -115,6 +116,7 @@ def get_redeem_page(token: str, db: Session = Depends(get_db)):
         code=redemption.code,
         prize_name=redemption.prize_name,
         gift_url=redemption.gift_url,
+        gift_code=redemption.gift_code,
         status=redemption.status,
         qr_data_url=_qr_data_url(redemption.token),
         expires_at=redemption.expires_at,
@@ -122,14 +124,15 @@ def get_redeem_page(token: str, db: Session = Depends(get_db)):
 
 
 @router.patch(
-    "/redemption/{code}/gift-url", response_model=RedemptionOut, dependencies=[Depends(get_current_admin)]
+    "/redemption/{code}/gift-info", response_model=RedemptionOut, dependencies=[Depends(get_current_admin)]
 )
-def update_gift_url(code: str, payload: GiftUrlUpdateRequest, db: Session = Depends(get_db)):
-    """카카오톡 선물하기 등 외부 선물 링크를 발급 후에도 추가/수정할 수 있게 한다."""
+def update_gift_info(code: str, payload: GiftInfoUpdateRequest, db: Session = Depends(get_db)):
+    """카카오톡 선물하기 등 외부 선물 링크/코드를 발급 후에도 추가/수정할 수 있게 한다."""
     redemption = db.query(Redemption).filter(Redemption.code == code).first()
     if not redemption:
         raise HTTPException(status_code=404, detail="존재하지 않는 코드입니다.")
     redemption.gift_url = payload.gift_url
+    redemption.gift_code = payload.gift_code
     db.commit()
     db.refresh(redemption)
     return redemption

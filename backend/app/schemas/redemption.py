@@ -9,6 +9,7 @@ class RedemptionIssueRequest(BaseModel):
     winner_id: int
     prize_name: str
     gift_url: str | None = None
+    gift_code: str | None = None
     expires_at: datetime | None = None
 
 
@@ -21,6 +22,7 @@ class RedemptionOut(BaseModel):
     token: str
     prize_name: str
     gift_url: str | None
+    gift_code: str | None
     status: RedemptionStatus
     issued_at: datetime | None
     redeemed_at: datetime | None
@@ -28,8 +30,9 @@ class RedemptionOut(BaseModel):
     expires_at: datetime | None
 
 
-class GiftUrlUpdateRequest(BaseModel):
+class GiftInfoUpdateRequest(BaseModel):
     gift_url: str | None = None
+    gift_code: str | None = None
 
 
 class RedeemPageOut(BaseModel):
@@ -38,6 +41,7 @@ class RedeemPageOut(BaseModel):
     code: str
     prize_name: str
     gift_url: str | None
+    gift_code: str | None
     status: RedemptionStatus
     qr_data_url: str
     expires_at: datetime | None

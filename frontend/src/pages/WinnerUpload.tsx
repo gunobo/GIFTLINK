@@ -22,6 +22,7 @@ export function WinnerUpload() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [rowPrize, setRowPrize] = useState<Record<number, string>>({});
   const [rowGiftUrl, setRowGiftUrl] = useState<Record<number, string>>({});
+  const [rowGiftCode, setRowGiftCode] = useState<Record<number, string>>({});
   const [issuingId, setIssuingId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -145,6 +146,7 @@ export function WinnerUpload() {
         winner_id: winnerId,
         prize_name: value,
         gift_url: (rowGiftUrl[winnerId] ?? "").trim() || null,
+        gift_code: (rowGiftCode[winnerId] ?? "").trim() || null,
       });
       setRowPrize((prev) => {
         const next = { ...prev };
@@ -152,6 +154,11 @@ export function WinnerUpload() {
         return next;
       });
       setRowGiftUrl((prev) => {
+        const next = { ...prev };
+        delete next[winnerId];
+        return next;
+      });
+      setRowGiftCode((prev) => {
         const next = { ...prev };
         delete next[winnerId];
         return next;
@@ -297,6 +304,7 @@ export function WinnerUpload() {
                 <th className="px-4 py-3 font-medium">상태</th>
                 <th className="px-4 py-3 font-medium">경품</th>
                 <th className="px-4 py-3 font-medium">선물 링크</th>
+                <th className="px-4 py-3 font-medium">선물 코드</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -349,12 +357,26 @@ export function WinnerUpload() {
                           </span>
                         )
                       ) : (
+                        <input
+                          className="input h-8 w-32 py-1 text-xs"
+                          placeholder="https://gift.kakao.com/..."
+                          value={rowGiftUrl[p.id] ?? ""}
+                          onChange={(e) => setRowGiftUrl((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        />
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {!p.is_winner ? (
+                        <span className="text-slate-300">-</span>
+                      ) : redemption ? (
+                        <span className="font-mono text-xs text-slate-600">{redemption.gift_code ?? "-"}</span>
+                      ) : (
                         <div className="flex items-center gap-1.5">
                           <input
-                            className="input h-8 w-32 py-1 text-xs"
-                            placeholder="https://gift.kakao.com/..."
-                            value={rowGiftUrl[p.id] ?? ""}
-                            onChange={(e) => setRowGiftUrl((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                            className="input h-8 w-28 py-1 text-xs"
+                            placeholder="선물 코드"
+                            value={rowGiftCode[p.id] ?? ""}
+                            onChange={(e) => setRowGiftCode((prev) => ({ ...prev, [p.id]: e.target.value }))}
                           />
                           <button
                             type="button"
