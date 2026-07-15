@@ -22,7 +22,7 @@ class SmsSender(BaseSender):
 
         payload = {
             "to": winner.phone.replace("-", ""),
-            "from": settings.solapi_sender_phone,
+            "from": settings.solapi_sender_phone.replace("-", ""),
             "text": message,
         }
 

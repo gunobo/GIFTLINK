@@ -35,7 +35,7 @@ class KakaoSender(BaseSender):
 
         payload = {
             "to": winner.phone.replace("-", ""),
-            "from": settings.solapi_sender_phone,
+            "from": settings.solapi_sender_phone.replace("-", ""),
             "text": message,
             "kakaoOptions": {
                 "pfId": settings.solapi_kakao_pf_id,
