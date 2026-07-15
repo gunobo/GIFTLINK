@@ -20,8 +20,18 @@ cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # 필요 시 값 수정 (DATABASE_URL, ADMIN_PASSWORD 등)
+alembic upgrade head   # DB 스키마 생성/최신화
 uvicorn app.main:app --reload
 ```
+
+스키마는 `Base.metadata.create_all`이 아니라 **Alembic 마이그레이션**으로 관리합니다. 모델을 바꿀 때마다:
+
+```bash
+alembic revision --autogenerate -m "설명"   # 새 마이그레이션 생성
+alembic upgrade head                         # 적용
+```
+
+`alembic upgrade head`를 안 하고 기동하면 `⚠️ DB 마이그레이션이 최신이 아닙니다` 경고가 로그에 뜹니다 (앱은 뜨지만 그 컬럼 관련 요청은 실패합니다).
 
 MySQL 없이 빠르게 띄워보려면 `.env`의 `DATABASE_URL`을 `sqlite:///./dev.db`로 바꿔도 동작합니다 (프로덕션은 MySQL 전제).
 
@@ -44,7 +54,8 @@ http://localhost:5173 — `/api`로 오는 요청은 Vite 프록시를 통해 �
 ```bash
 cp .env.example .env                   # MySQL 자격 증명 — 반드시 change-me 값 교체
 cp backend/.env.example backend/.env   # JWT_SECRET, ADMIN_PASSWORD 등 — 반드시 change-me 값 교체
-docker compose up --build
+docker compose up --build -d
+docker compose exec backend alembic upgrade head   # DB 스키마 생성/최신화
 ```
 
 두 `.env` 파일 모두 git에 커밋되지 않습니다 (`.gitignore`). `docker-compose.yml`에는 자격 증명이 하드코딩되어 있지 않고 루트 `.env`의 `MYSQL_*` 값을 읽어서 사용합니다.
@@ -87,9 +98,18 @@ openssl rand -hex 32
 
 ```bash
 docker compose up --build -d
-docker compose logs -f backend   # 정상 기동 확인 (⚠️ 경고 로그가 없어야 함 — 있으면 .env 값이 기본값 그대로라는 뜻)
+docker compose exec backend alembic upgrade head   # DB 스키마 생성/최신화
+docker compose logs -f backend   # 정상 기동 확인 (⚠️ 경고 로그가 없어야 함 — 있으면 .env 값이 기본값이거나 마이그레이션이 안 된 것)
 docker compose ps
 ```
+
+**이미 GIFTLINK를 돌리고 있던 경우** (DB에 테이블이 이미 다 있는 상태): 위 `alembic upgrade head` 대신 아래를 **딱 한 번만** 실행해서 "이미 최신 상태"라고 표시만 해주면 됩니다. 실행하면 안 됨: 기존 데이터가 있는 테이블을 다시 만들려고 시도하지 않습니다 (스탬프만 찍는 명령이라 안전합니다).
+
+```bash
+docker compose exec backend alembic stamp head
+```
+
+그 이후부터는 `git pull` → `docker compose up -d --build` → `docker compose exec backend alembic upgrade head` 순서만 반복하면, 모델을 바꿔도 컬럼 누락 에러 없이 자동으로 스키마가 맞춰집니다.
 
 - 프론트엔드 컨테이너: 호스트 `5102`번 → 내부 nginx `80`
 - 백엔드 컨테이너: 호스트 `8004`번 → 내부 uvicorn `8000`
@@ -134,4 +154,4 @@ docker compose ps
 - 이메일(SMTP)·웹훅(Discord/Slack) 발송은 실제로 동작합니다 (SMTP/웹훅 URL 설정 시).
 - **관리자 비밀번호 변경 가능** — 로그인 후 사이드바 "설정"에서 변경. 최초 비밀번호는 여전히 `backend/.env`의 `ADMIN_PASSWORD`로 시드됩니다.
 - QR 스캔 화면은 카메라 인식 없이 수동 입력/붙여넣기 기반입니다. 카메라 스캔은 이후 `BarcodeDetector` 등으로 확장 가능합니다.
-- `MessageTemplate` 테이블에 `kakao_template_id` 컬럼이 추가됐습니다. 마이그레이션 도구 없이 `Base.metadata.create_all`만 쓰고 있어서, **이미 배포해서 DB가 만들어진 상태라면** 새 컬럼이 자동으로 추가되지 않습니다 — `ALTER TABLE message_template ADD COLUMN kakao_template_id VARCHAR(100);`를 직접 실행하거나 아직 DB를 새로 만드는 단계라면 무시해도 됩니다.
+- **DB 스키마는 Alembic으로 관리합니다** (`backend/alembic/`). 더 이상 `Base.metadata.create_all`을 쓰지 않아서, 모델을 바꾸면 `alembic revision --autogenerate`로 마이그레이션을 만들고 `alembic upgrade head`로 적용하면 됩니다. 서버 기동 시 마이그레이션이 안 맞으면 로그에 경고가 뜹니다.
